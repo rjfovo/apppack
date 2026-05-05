@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=AppPack
+Comment=AppPack 自解压安装包工具链
+Exec=app-builder
+Icon=AppPack
+Terminal=true
+Type=Application
+Categories=Development;Utility;
+StartupNotify=true

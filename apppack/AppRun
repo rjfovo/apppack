@@ -1,0 +1,79 @@
+#!/bin/bash
+# AppRun - AppPack 工具链入口调度脚本
+# 根据调用方式分发到不同的可执行文件
+#
+# 支持:
+#   app-builder     - 打包工具（默认）
+#   app-installer   - 安装器运行时
+#
+# 使用方式:
+#   ./AppRun                    → 显示打包工具帮助
+#   ./AppRun --build            → 调用打包工具
+#   ./AppRun --install          → 调用安装器（安装 AppPack 自身）
+#   ./AppRun --info             → 查看安装包信息
+#   ln -s AppRun app-builder    → 通过符号链接直接调用打包工具
+#   ln -s AppRun app-installer  → 通过符号链接直接调用安装器
+
+APPDIR="$(dirname "$(readlink -f "$0")")"
+
+# 设置库路径（如果有 bundled 库）
+if [ -d "${APPDIR}/usr/lib" ]; then
+    export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${LD_LIBRARY_PATH}"
+fi
+
+# 设置安装目录环境变量
+export APPPACK_INSTALL_DIR="${APPDIR}"
+
+# ========== 用户配置目录设置（XDG 基础目录规范）==========
+APP_NAME="AppPack"
+
+# 用户配置目录（~/.config/AppPack/）
+export APP_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/${APP_NAME}"
+
+# 用户数据目录（~/.local/share/AppPack/）
+export APP_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/${APP_NAME}"
+
+# 缓存目录（~/.cache/AppPack/）
+export APP_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}"
+
+# 状态目录（~/.local/state/AppPack/）
+export APP_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}"
+
+# 自动创建用户配置目录（首次运行时）
+if [ ! -d "${APP_CONFIG_DIR}" ]; then
+    mkdir -p "${APP_CONFIG_DIR}"
+fi
+if [ ! -d "${APP_DATA_DIR}" ]; then
+    mkdir -p "${APP_DATA_DIR}"
+fi
+if [ ! -d "${APP_CACHE_DIR}" ]; then
+    mkdir -p "${APP_CACHE_DIR}"
+fi
+if [ ! -d "${APP_STATE_DIR}" ]; then
+    mkdir -p "${APP_STATE_DIR}"
+fi
+
+# 获取用户调用的命令名（通过符号链接方式调用时）
+CMD=$(basename "$0")
+
+case "$CMD" in
+    app-builder|AppRun)
+        # 调用打包工具
+        # 如果没有参数，显示帮助
+        if [ $# -eq 0 ]; then
+            exec "${APPDIR}/usr/bin/app-builder" --help
+        fi
+        exec "${APPDIR}/usr/bin/app-builder" "$@"
+        ;;
+    app-installer)
+        # 调用安装器运行时
+        exec "${APPDIR}/usr/bin/app-installer" "$@"
+        ;;
+    *)
+        # 默认启动打包工具
+        if [ $# -eq 0 ]; then
+            exec "${APPDIR}/usr/bin/app-builder" --help
+        fi
+        exec "${APPDIR}/usr/bin/app-builder" "$@"
+        ;;
+esac

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=HelloWorld
+Comment=AppPack 示例应用 - 演示自解压安装包格式
+Exec=hello
+Icon=HelloWorld
+Terminal=true
+Type=Application
+Categories=Utility;
+StartupNotify=true

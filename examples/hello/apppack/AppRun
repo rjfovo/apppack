@@ -1,0 +1,54 @@
+#!/bin/bash
+# AppRun - HelloWorld 应用启动脚本
+# 设置环境变量并启动应用，包含用户配置支持
+
+APPDIR="$(dirname "$(readlink -f "$0")")"
+
+# 设置库路径（如果有 bundled 库）
+if [ -d "${APPDIR}/usr/lib" ]; then
+    export LD_LIBRARY_PATH="${APPDIR}/usr/lib:${LD_LIBRARY_PATH}"
+fi
+
+# 设置安装目录环境变量
+export APPPACK_INSTALL_DIR="${APPDIR}"
+
+# ========== 用户配置目录设置（XDG 基础目录规范）==========
+APP_NAME="HelloWorld"
+
+# 用户配置目录（~/.config/HelloWorld/）
+export APP_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/${APP_NAME}"
+
+# 用户数据目录（~/.local/share/HelloWorld/）
+export APP_DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/${APP_NAME}"
+
+# 缓存目录（~/.cache/HelloWorld/）
+export APP_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/${APP_NAME}"
+
+# 状态目录（~/.local/state/HelloWorld/）
+export APP_STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/${APP_NAME}"
+
+# 自动创建用户配置目录（首次运行时）
+if [ ! -d "${APP_CONFIG_DIR}" ]; then
+    mkdir -p "${APP_CONFIG_DIR}"
+    echo "已创建用户配置目录: ${APP_CONFIG_DIR}" >&2
+fi
+if [ ! -d "${APP_DATA_DIR}" ]; then
+    mkdir -p "${APP_DATA_DIR}"
+fi
+if [ ! -d "${APP_CACHE_DIR}" ]; then
+    mkdir -p "${APP_CACHE_DIR}"
+fi
+if [ ! -d "${APP_STATE_DIR}" ]; then
+    mkdir -p "${APP_STATE_DIR}"
+fi
+
+# 如果用户配置不存在，从安装目录复制默认配置
+DEFAULT_CONFIG="${APPDIR}/usr/share/${APP_NAME}/settings.conf"
+USER_CONFIG="${APP_CONFIG_DIR}/settings.conf"
+if [ -f "${DEFAULT_CONFIG}" ] && [ ! -f "${USER_CONFIG}" ]; then
+    cp "${DEFAULT_CONFIG}" "${USER_CONFIG}"
+    echo "已初始化默认配置: ${USER_CONFIG}" >&2
+fi
+
+# 执行应用
+exec "${APPDIR}/usr/bin/hello" "$@"

@@ -1,0 +1,16 @@
+{
+    "app_name": "HelloWorld",
+    "version": "1.0.0",
+    "install_dir": "/opt/HelloWorld",
+    "description": "AppPack 示例应用 - 演示自解压安装包格式",
+    "executable": "hello",
+    "maintainer": "AppPack Team <apppack@example.com>",
+    "categories": "Utility;",
+    "terminal": true,
+    "bundle_deps": false,
+    "scripts": {
+        "pre_install": "apppack-pre-install.sh",
+        "post_install": "apppack-post-install.sh",
+        "post_uninstall": "apppack-post-uninstall.sh"
+    }
+}

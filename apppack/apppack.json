@@ -1,0 +1,16 @@
+{
+    "app_name": "AppPack",
+    "version": "1.0.0",
+    "install_dir": "/opt/AppPack",
+    "description": "AppPack 自解压安装包工具链 - 包含打包工具和安装器运行时",
+    "executable": "app-builder",
+    "maintainer": "AppPack Team <apppack@example.com>",
+    "categories": "Development;Utility;",
+    "terminal": true,
+    "bundle_deps": false,
+    "scripts": {
+        "pre_install": "apppack-pre-install.sh",
+        "post_install": "apppack-post-install.sh",
+        "post_uninstall": "apppack-post-uninstall.sh"
+    }
+}

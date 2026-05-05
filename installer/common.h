@@ -1,0 +1,7 @@
+#ifndef APPPACK_INSTALLER_COMMON_H
+#define APPPACK_INSTALLER_COMMON_H
+
+// 复用公共定义
+#include "../common/common.h"
+
+#endif // APPPACK_INSTALLER_COMMON_H

@@ -1,3 +1,0 @@
-/home/ruanjian/workspace/project/apppack/builder/build/CMakeFiles/app-builder.dir
-/home/ruanjian/workspace/project/apppack/builder/build/CMakeFiles/edit_cache.dir
-/home/ruanjian/workspace/project/apppack/builder/build/CMakeFiles/rebuild_cache.dir

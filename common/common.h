@@ -18,13 +18,24 @@ struct PackageHeader {
     char install_dir[256];  // 默认安装目录
     char version[64];       // 应用版本号
     uint32_t checksum;      // 简单校验和
+    uint32_t flags;         // 标志位: bit0-1=desktop_entry_mode, bit2=create_symlink
 
     PackageHeader() {
         std::memset(this, 0, sizeof(PackageHeader));
         std::memcpy(magic, "APPPACK", 7);
         std::strncpy(version, "1.0.0", sizeof(version) - 1);
+        flags = 0;  // 默认禁用桌面图标
     }
 };
+
+// 桌面入口模式 (bit0-1)
+constexpr uint32_t DESKTOP_ENTRY_DISABLED = 0;       // 00: 禁用桌面图标
+constexpr uint32_t DESKTOP_ENTRY_USER     = 1 << 0;  // 01: 安装到用户目录 ~/.local/share/
+constexpr uint32_t DESKTOP_ENTRY_SYSTEM   = 1 << 1;  // 10: 安装到系统目录 /usr/share/
+constexpr uint32_t DESKTOP_ENTRY_MASK     = 0x3;     // 掩码
+
+// 符号链接标志
+constexpr uint32_t FLAG_CREATE_SYMLINK    = 1 << 2;  // 是否创建符号链接
 #pragma pack(pop)
 
 // 文件条目

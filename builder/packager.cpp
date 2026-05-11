@@ -65,6 +65,41 @@ bool createPackage(const PackageConfig& config) {
         }
         header.checksum = calculateChecksum(compressed);
         
+        // 从 apppack.json 读取 flags 配置
+        // 默认 flags=0（所有功能禁用），根据配置开启需要的功能
+        header.flags = 0;
+        fs::path appdir_path(config.appdir_path);
+        fs::path config_path = appdir_path / "apppack.json";
+        if (fs::exists(config_path)) {
+            std::ifstream config_file(config_path);
+            std::stringstream buffer;
+            buffer << config_file.rdbuf();
+            std::string content = buffer.str();
+            
+            // 辅助函数：提取 JSON 字符串值
+            auto extractJsonString = [](const std::string& json, const std::string& key) -> std::string {
+                std::string search = "\"" + key + "\": \"";
+                size_t pos = json.find(search);
+                if (pos == std::string::npos) return "";
+                pos += search.length();
+                size_t end = json.find("\"", pos);
+                if (end == std::string::npos) return "";
+                return json.substr(pos, end - pos);
+            };
+            
+            // 解析 create_desktop_entry: "disabled" | "user" | "system"
+            std::string desktop_entry = extractJsonString(content, "create_desktop_entry");
+            if (desktop_entry == "system") {
+                header.flags |= DESKTOP_ENTRY_SYSTEM;
+                std::cout << "  桌面图标: 系统目录 (create_desktop_entry=system)" << std::endl;
+            } else if (desktop_entry == "user") {
+                header.flags |= DESKTOP_ENTRY_USER;
+                std::cout << "  桌面图标: 用户目录 (create_desktop_entry=user)" << std::endl;
+            } else {
+                std::cout << "  桌面图标: 已禁用 (create_desktop_entry=disabled)" << std::endl;
+            }
+        }
+        
         // 写入输出文件
         std::cout << "正在生成安装包..." << std::endl;
         std::ofstream out(config.output_path, std::ios::binary);

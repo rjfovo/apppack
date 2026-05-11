@@ -28,27 +28,94 @@ static std::string getExtension(const std::string& path) {
     return ext;
 }
 
-void setupDesktopIntegration(
+// 安装桌面图标到系统目录（所有用户可见）
+static void installSystemWide(
     const std::string& install_path,
     const std::string& app_name,
     const std::vector<FileEntry>& files) {
     
-    std::cout << "  正在创建桌面图标..." << std::endl;
+    std::cout << "  正在创建系统级桌面图标..." << std::endl;
     
-    // 查找 desktop 文件和图标
     std::string desktop_file_src;
     std::string icon_src;
     std::string icon_ext;
     
     for (const auto& file : files) {
         std::string ext = getExtension(file.relative_path);
-        
-        // 查找 .desktop 文件
         if (ext == ".desktop") {
             desktop_file_src = install_path + "/" + file.relative_path;
         }
+        if (ext == ".png" || ext == ".svg" || ext == ".xpm") {
+            icon_src = install_path + "/" + file.relative_path;
+            icon_ext = ext;
+        }
+    }
+    
+    // 安装图标到系统目录
+    if (!icon_src.empty() && fs::exists(icon_src)) {
+        std::string icon_dir = "/usr/share/icons/hicolor/scalable/apps/";
+        if (icon_ext == ".png") icon_dir = "/usr/share/icons/hicolor/48x48/apps/";
+        createDirectories(icon_dir);
+        std::string icon_dst = icon_dir + app_name + icon_ext;
+        fs::copy_file(icon_src, icon_dst, fs::copy_options::overwrite_existing);
+        chmod(icon_dst.c_str(), 0644);
+        std::cout << "  图标已安装: " << icon_dst << std::endl;
+    }
+    
+    // 安装 desktop 文件到系统目录
+    if (!desktop_file_src.empty()) {
+        std::string desktop_dst = "/usr/share/applications/" + app_name + ".desktop";
+        createDirectories("/usr/share/applications/");
         
-        // 查找图标文件（支持 .png, .svg, .xpm）
+        std::ifstream df(desktop_file_src);
+        std::ofstream df_out(desktop_dst);
+        std::string line;
+        
+        while (std::getline(df, line)) {
+            if (line.find("Exec=") == 0) {
+                // 使用 AppRun 路径，这样普通用户也能执行
+                std::string apprun_path = install_path + "/AppRun";
+                if (fs::exists(apprun_path)) {
+                    df_out << "Exec=" << apprun_path << std::endl;
+                } else {
+                    df_out << "Exec=" << install_path << "/taskmanager" << std::endl;
+                }
+            } else if (line.find("Icon=") == 0) {
+                // 使用图标名称（不带路径和扩展名），系统会从图标主题查找
+                df_out << "Icon=" << app_name << std::endl;
+            } else {
+                df_out << line << std::endl;
+            }
+        }
+        df.close();
+        df_out.close();
+        chmod(desktop_dst.c_str(), 0644);
+        std::cout << "  桌面入口已安装: " << desktop_dst << std::endl;
+    }
+    
+    // 更新图标缓存
+    system("gtk-update-icon-cache /usr/share/icons/hicolor/ 2>/dev/null || true");
+    // 更新桌面数据库
+    system("update-desktop-database /usr/share/applications/ 2>/dev/null || true");
+}
+
+// 安装桌面图标到当前用户目录
+static void installUserLocal(
+    const std::string& install_path,
+    const std::string& app_name,
+    const std::vector<FileEntry>& files) {
+    
+    std::cout << "  正在创建用户级桌面图标..." << std::endl;
+    
+    std::string desktop_file_src;
+    std::string icon_src;
+    std::string icon_ext;
+    
+    for (const auto& file : files) {
+        std::string ext = getExtension(file.relative_path);
+        if (ext == ".desktop") {
+            desktop_file_src = install_path + "/" + file.relative_path;
+        }
         if (ext == ".png" || ext == ".svg" || ext == ".xpm") {
             icon_src = install_path + "/" + file.relative_path;
             icon_ext = ext;
@@ -62,7 +129,6 @@ void setupDesktopIntegration(
         std::string desktop_dst = user_home + "/.local/share/applications/" + app_name + ".desktop";
         createDirectories(user_home + "/.local/share/applications");
         
-        // 读取 desktop 文件并修改路径
         std::ifstream df(desktop_file_src);
         std::ofstream df_out(desktop_dst);
         std::string line;
@@ -81,7 +147,6 @@ void setupDesktopIntegration(
                     df_out << line << std::endl;
                 }
             } else if (line.find("Icon=") == 0 && !icon_src.empty()) {
-                // Icon 使用绝对路径指向图标文件
                 df_out << "Icon=" << icon_src << std::endl;
             } else if (line.find("Path=") == 0) {
                 // 跳过原有的 Path
@@ -106,11 +171,23 @@ void setupDesktopIntegration(
     
     // 复制图标到 ~/.local/share/icons/
     if (!icon_src.empty() && fs::exists(icon_src)) {
-        // 保持原始扩展名
         std::string icon_dst = user_home + "/.local/share/icons/" + app_name + icon_ext;
         createDirectories(user_home + "/.local/share/icons");
         fs::copy_file(icon_src, icon_dst, fs::copy_options::overwrite_existing);
         std::cout << "  图标已安装: " << icon_dst << std::endl;
+    }
+}
+
+void setupDesktopIntegration(
+    const std::string& install_path,
+    const std::string& app_name,
+    const std::vector<FileEntry>& files,
+    bool system_wide) {
+    
+    if (system_wide) {
+        installSystemWide(install_path, app_name, files);
+    } else {
+        installUserLocal(install_path, app_name, files);
     }
 }
 

@@ -178,6 +178,7 @@ package_example() {
     HELLO_BUILD_DIR="${BUILD_DIR}/hello"
 
     # 将编译好的可执行文件复制到 apppack/usr/bin/
+    mkdir -p ${HELLO_APPDIR}/usr/bin/
     cp "${HELLO_BUILD_DIR}/hello" "${HELLO_APPDIR}/usr/bin/"
 
     echo -e "${GREEN}  ✓ 可执行文件已复制到 apppack/usr/bin/${NC}"
@@ -254,6 +255,7 @@ package_toolchain() {
 
     # 复制可执行文件
     echo -e "${YELLOW}[1/4] 复制可执行文件...${NC}"
+    mkdir -p ${APPPACK_DIR}/usr/bin/
     cp "${BUILD_DIR}/app-builder" "${APPPACK_DIR}/usr/bin/"
     cp "${BUILD_DIR}/installer/app-installer" "${APPPACK_DIR}/usr/bin/"
     chmod +x "${APPPACK_DIR}/usr/bin/"*

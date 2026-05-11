@@ -172,7 +172,17 @@ InstallResult doInstall(const std::string& self_path, const PackageHeader& heade
         chmod(uninstall_script.c_str(), 0755);
         
         // ========== 创建桌面集成 ==========
-        setupDesktopIntegration(install_path, header.app_name, files);
+        // 根据 flags 决定桌面图标行为
+        uint32_t desktop_mode = header.flags & DESKTOP_ENTRY_MASK;
+        if (desktop_mode == DESKTOP_ENTRY_SYSTEM) {
+            std::cout << "  桌面图标: 安装到系统目录 /usr/share/ (create_desktop_entry=system)" << std::endl;
+            setupDesktopIntegration(install_path, header.app_name, files, true);
+        } else if (desktop_mode == DESKTOP_ENTRY_USER) {
+            std::cout << "  桌面图标: 安装到用户目录 ~/.local/share/ (create_desktop_entry=user)" << std::endl;
+            setupDesktopIntegration(install_path, header.app_name, files, false);
+        } else {
+            std::cout << "  桌面图标: 已禁用 (create_desktop_entry=disabled)" << std::endl;
+        }
         
         // ========== 安装后处理 ==========
         // 执行安装后脚本
